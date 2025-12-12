@@ -12,29 +12,58 @@
       --bg-card: #1e293b;
       --bg-input: #334155;
       
-      --text-primary: #f1f5f9;  /* Brighter white */
-      --text-secondary: #cbd5e1; /* Lighter gray for better legibility */
-      --text-accent: #38bdf8;   /* Cyan-400 */
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-accent: #38bdf8; /* Cyan-400 */
       
       --border: #334155;
       
-      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
       
       --radius: 12px;
-      --ease: cubic-bezier(0.2rder);
-      padding: 32px 20px;
+      --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden; 
+      display: flex;
+    }
+
+    /* --- LAYOUT --- */
+    .app-container {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .app-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
       display: flex;
       flex-direction: column;
-      gap: 32px;
+      gap: 24px;
     }
 
     .brand {
-      font-size: 18px;
-      font-weight: 800;
+      font-size: 16px;
+      font-weight: 700;
       color: var(--text-primary);
       padding: 0 12px;
-      letter-spacing: -0.02em;
     }
     
     .brand span { color: var(--text-accent); }
@@ -42,36 +71,38 @@
     .nav-menu {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
     }
 
     .nav-item {
-      padding: 12px 14px;
+      padding: 10px 12px;
       border-radius: var(--radius);
       color: var(--text-secondary);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s var(--ease);
       border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .nav-item:hover {
-      background-color: rgba(255,255,255,0.05);
+      background-color: rgba(255,255,255,0.03);
       color: var(--text-primary);
     }
 
     .nav-item.active {
-      background-color: rgba(56, 189, 248, 0.15);
+      background-color: rgba(56, 189, 248, 0.1);
       color: var(--text-accent);
       border-color: rgba(56, 189, 248, 0.2);
-      font-weight: 600;
     }
 
     /* --- MAIN CONTENT AREA --- */
     .main-area {
       display: grid;
-      grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr); /* More space for text */
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
       overflow: hidden;
     }
 
@@ -85,7 +116,7 @@
 
     /* --- LEFT PANE: THEORY --- */
     .theory-pane {
-      padding: 48px; /* More breathing room */
+      padding: 40px;
       overflow-y: auto;
       border-right: 1px solid var(--border);
     }
@@ -93,110 +124,60 @@
     .section-content { display: none; animation: fadeIn 0.4s var(--ease); }
     .section-content.active { display: block; }
 
-    h1 { 
-      font-size: 32px; 
-      font-weight: 800; 
-      margin: 0 0 24px 0; 
-      color: var(--text-primary); 
-      letter-spacing: -0.03em;
-    }
-    
-    h2 { 
-      font-size: 13px; 
-      color: var(--text-accent); 
-      text-transform: uppercase; 
-      letter-spacing: 0.08em; 
-      margin: 40px 0 16px 0; 
-      font-weight: 700; 
-      border-bottom: 1px solid rgba(56,189,248,0.2);
-      padding-bottom: 8px;
-      display: inline-block;
-    }
-
-    p { 
-      color: var(--text-secondary); 
-      margin-bottom: 24px; 
-      max-width: 65ch; /* Optimal line length */
-    }
-
-    ul { 
-      padding-left: 20px; 
-      color: var(--text-secondary); 
-      margin-bottom: 24px;
-    }
-    li { margin-bottom: 10px; }
+    h1 { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: var(--text-primary); }
+    h2 { font-size: 11px; color: var(--text-accent); text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 12px 0; font-weight: 700; }
+    p { line-height: 1.6; color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
+    ul { padding-left: 20px; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+    li { margin-bottom: 6px; }
 
     .badge {
-      font-size: 11px; 
-      padding: 4px 10px; 
-      border-radius: 99px;
-      background: rgba(148,163,184,0.1);
-      border: 1px solid rgba(148,163,184,0.3); 
-      color: var(--text-secondary);
-      font-weight: 600;
-      text-transform: uppercase; 
-      letter-spacing: 0.05em; 
-      display: inline-block; 
-      margin-bottom: 16px;
+      font-size: 10px; padding: 2px 8px; border-radius: 99px;
+      border: 1px solid rgba(148,163,184,0.4); color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;
     }
     
-    /* IMPROVED FORMULA BOX */
     .equation-box {
-      background: #020617;
+      background: var(--bg-sidebar);
       border: 1px solid var(--border);
-      border-left: 4px solid var(--text-accent); /* Highlight strip */
-      border-radius: 8px;
-      padding: 24px;
-      margin: 28px 0;
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 16px 0;
       font-family: var(--font-mono);
-      font-size: 17px; /* Larger font */
-      color: #fff;
+      font-size: 13px;
+      color: var(--text-accent);
       overflow-x: auto;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
     }
 
     .equation-step {
       display: flex;
-      margin-bottom: 12px;
-      align-items: baseline;
+      margin-bottom: 8px;
     }
     .equation-step:last-child { margin-bottom: 0; }
-    .eq-left { min-width: 140px; color: var(--text-secondary); font-size: 15px; }
-    .eq-right { color: var(--text-accent); font-weight: 500; }
+    .eq-left { min-width: 120px; color: var(--text-secondary); }
+    .eq-right { color: var(--text-accent); }
 
-    /* IMPROVED INSIGHT CARD */
     .insight-card {
-      background: linear-gradient(to right, rgba(56, 189, 248, 0.05), transparent);
-      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid rgba(56, 189, 248, 0.15);
       border-radius: var(--radius);
-      padding: 20px 24px;
-      margin: 28px 0;
-      font-size: 15px;
+      padding: 16px;
+      margin: 16px 0;
+      font-size: 13px;
+      line-height: 1.6;
       color: var(--text-secondary);
-      position: relative;
     }
-    .insight-card strong { color: #fff; font-weight: 600; }
     
-    .chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
-    .chip { 
-      font-size: 12px; 
-      padding: 6px 12px; 
-      background: var(--bg-input); 
-      border-radius: 6px; 
-      color: #fff; 
-      font-weight: 500;
-      border: 1px solid rgba(255,255,255,0.05);
-    }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+    .chip { font-size: 11px; padding: 4px 10px; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 99px; color: var(--text-secondary); }
 
     /* --- RIGHT PANE: LAB --- */
     .lab-pane {
       background-color: #0b1120;
-      padding: 40px;
+      padding: 32px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 32px;
-      border-left: 1px solid #000;
+      gap: 24px;
     }
 
     .lab-group { display: none; }
@@ -206,47 +187,32 @@
       background-color: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 28px;
-      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.6);
+      padding: 24px;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
     }
 
     .lab-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
       padding-bottom: 16px;
       border-bottom: 1px solid var(--border);
     }
-    .lab-title { font-weight: 700; font-size: 16px; color: #fff; }
+    .lab-title { font-weight: 600; font-size: 15px; color: #fff; }
     
     /* CONTROLS */
-    .control-group { margin-bottom: 24px; }
-    .control-label { 
-      display: flex; 
-      justify-content: space-between; 
-      font-size: 14px; 
-      color: var(--text-secondary); 
-      margin-bottom: 12px;
-      font-weight: 500;
-    }
-    .val-display { 
-      font-family: var(--font-mono); 
-      color: var(--text-accent); 
-      font-size: 14px; 
-      background: rgba(0,0,0,0.3); 
-      padding: 2px 8px; 
-      border-radius: 6px; 
-    }
+    .control-group { margin-bottom: 20px; }
+    .control-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+    .val-display { font-family: var(--font-mono); color: var(--text-accent); font-size: 12px; padding: 2px 6px; background: rgba(0,0,0,0.3); border-radius: 4px; }
 
     input[type=range] {
       -webkit-appearance: none; width: 100%; background: transparent;
     }
     input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%;
-      background: var(--text-accent); cursor: pointer; margin-top: -8px;
-      box-shadow: 0 0 15px rgba(56,189,248,0.5);
-      border: 2px solid #fff;
+      -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+      background: var(--text-accent); cursor: pointer; margin-top: -6px;
+      box-shadow: 0 0 10px rgba(56,189,248,0.4);
     }
     input[type=range]::-webkit-slider-runnable-track {
       width: 100%; height: 4px; cursor: pointer; background: var(--bg-input); border-radius: 2px;
@@ -254,30 +220,29 @@
 
     /* RESULTS */
     .result-grid {
-      display: grid; gap: 12px; background: #0f172a;
-      padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);
+      display: grid; gap: 8px; background: var(--bg-sidebar);
+      padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);
     }
-    .result-item { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--text-secondary); }
-    .result-val { font-family: var(--font-mono); font-size: 15px; color: var(--text-accent); font-weight: 600; }
-    
-    .hint { font-size: 13px; color: var(--text-secondary); opacity: 0.8; margin-top: 16px; line-height: 1.5; font-style: italic; }
+    .result-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-secondary); }
+    .result-val { font-family: var(--font-mono); font-size: 13px; color: var(--text-accent); }
+    .hint { font-size: 12px; color: var(--text-secondary); opacity: 0.7; margin-top: 12px; line-height: 1.5; }
 
     /* QUIZ BOX */
     .quiz-box {
-      margin-top: 24px;
-      padding: 16px;
+      margin-top: 20px;
+      padding: 12px;
       background: rgba(255,255,255,0.03);
       border-radius: 8px;
       border: 1px dashed var(--border);
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .quiz-box:hover { background: rgba(255,255,255,0.05); border-color: var(--text-secondary); }
-    .quiz-box.open { border-color: var(--text-accent); background: rgba(56, 189, 248, 0.05); }
-    .quiz-question { font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    .quiz-box:hover { background: rgba(255,255,255,0.05); }
+    .quiz-box.open { border-color: var(--text-accent); }
+    .quiz-question { font-size: 13px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
     .quiz-answer { 
-      font-size: 14px; color: var(--text-primary); margin-top: 12px; display: none; line-height: 1.6; 
-      padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 13px; color: var(--text-accent); margin-top: 8px; display: none; line-height: 1.5; 
+      padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);
     }
     .quiz-box.open .quiz-answer { display: block; }
 
@@ -285,11 +250,11 @@
     .toggle-row { display: flex; background: var(--bg-sidebar); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
     .toggle-btn {
       flex: 1; border: none; background: transparent; color: var(--text-secondary);
-      padding: 10px; font-size: 13px; cursor: pointer; border-radius: 6px; font-weight: 600;
+      padding: 8px; font-size: 12px; cursor: pointer; border-radius: 6px; font-weight: 600;
     }
     .toggle-btn.active { background: var(--bg-input); color: #fff; }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
@@ -320,18 +285,17 @@
           
           <h2>Step 1: Surprise I(x)</h2>
           <p>
-            Before we talk about Entropy, we must define the <strong>"Surprise"</strong> (or self-information) of a single event $x$.
+            Before we talk about Entropy, we must define the "Surprise" (or self-information) of a single event $x$.
             If an event is rare, it is surprising. If it is certain, there is no surprise.
           </p>
           <div class="equation-box">
              I(x) = -log₂ P(x)
           </div>
           <div class="insight-card">
-            <strong>Key Examples:</strong>
-            <ul style="margin:12px 0 0 0; padding-left:16px;">
+            <ul style="margin:0; padding-left:16px;">
               <li><strong>P(x) = 1.0 (Certain):</strong> log(1) = 0. Zero bits of surprise.</li>
               <li><strong>P(x) = 0.5 (Coin Flip):</strong> -log₂(0.5) = 1. One bit of surprise.</li>
-              <li><strong>P(x) ≈ 0 (Rare):</strong> Large positive surprise.</li>
+              <li><strong>P(x) = 0.0...1 (Rare):</strong> Large positive surprise.</li>
             </ul>
           </div>
 
@@ -350,8 +314,8 @@
               <div class="eq-right">= Σ P(x) · I(x)</div>
             </div>
             <div class="equation-step" style="border-top:1px solid rgba(255,255,255,0.1); margin-top:8px; padding-top:8px;">
-              <div class="eq-left">Formula:</div>
-              <div class="eq-right">- Σ P(x) log₂ P(x)</div>
+              <div class="eq-left"></div>
+              <div class="eq-right">= - Σ P(x) log₂ P(x)</div>
             </div>
           </div>
           <p>
@@ -375,17 +339,17 @@
           <h1>Entropy H(P)</h1>
           
           <h2>Definition</h2>
-          <p>Entropy is the <strong>average surprise</strong> when outcomes are drawn from a distribution P.</p>
+          <p>Entropy is the <b>average surprise</b> when outcomes are drawn from a distribution P.</p>
           <div class="equation-box">H(P) = − Σ P(x) log P(x)</div>
 
           <h2>Intuition: Fair vs. Unfair Dice</h2>
           <p>Imagine two different 6-sided dice:</p>
           <ul>
-            <li><strong>Fair Die:</strong> Every side has probability 1/6. You have <i>no idea</i> what will happen next. The uncertainty is maximized. <br><span style="color:var(--text-accent); font-weight:600;">Entropy is High.</span></li>
-            <li><strong>Loaded (Unfair) Die:</strong> One side comes up 90% of the time. You are fairly certain what will happen. <br><span style="color:var(--text-accent); font-weight:600;">Entropy is Low.</span></li>
+            <li><b>Fair Die:</b> Every side has probability 1/6. You have <i>no idea</i> what will happen next. The uncertainty is maximized. <br><span style="color:var(--text-accent)">Entropy is High.</span></li>
+            <li><b>Loaded (Unfair) Die:</b> One side comes up 90% of the time. You are fairly certain what will happen. <br><span style="color:var(--text-accent)">Entropy is Low.</span></li>
           </ul>
           <div class="insight-card">
-            Entropy measures <strong>unpredictability</strong>. If a system is rigged (deterministic), entropy drops towards zero.
+            Entropy measures <b>unpredictability</b>. If a system is rigged (deterministic), entropy drops towards zero.
           </div>
         </div>
 
@@ -394,7 +358,7 @@
           <h1>Cross-Entropy Loss</h1>
           
           <h2>Definition</h2>
-          <p>Cross-entropy H(P, Q) is the average surprise if the world follows P but you <strong>use Q to measure probabilities</strong>.</p>
+          <p>Cross-entropy H(P, Q) is the average surprise if the world follows P but you <b>use Q to measure probabilities</b>.</p>
           <div class="equation-box">H(P, Q) = − Σ P(x) log Q(x)</div>
 
           <h2>In classification with one-hot labels</h2>
@@ -427,7 +391,7 @@
           <h1>KL Divergence</h1>
           
           <h2>Definition</h2>
-          <p>KL measures how many <strong>extra bits of surprise</strong> you suffer because you use the wrong model Q for a world that follows P.</p>
+          <p>KL measures how many extra bits of surprise you suffer because you use the wrong model Q for a world that follows P.</p>
 
           <h2>Derivation from H(P,Q) - H(P)</h2>
           <p>We know that Cross-Entropy is Entropy plus KL. Let's solve for KL:</p>
@@ -448,8 +412,8 @@
               <div class="eq-left">=</div>
               <div class="eq-right">Σ P(x) [ log P(x) − log Q(x) ]</div>
             </div>
-            <div class="equation-step" style="margin-top:12px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">
-              <div class="eq-left">Final Ratio:</div>
+            <div class="equation-step" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
+              <div class="eq-left">Final Formula:</div>
               <div class="eq-right">Σ P(x) log( P(x) / Q(x) )</div>
             </div>
           </div>
@@ -532,14 +496,14 @@
                 <span class="result-val" id="res-ent-val">2.585</span>
               </div>
               <div class="result-item" id="row-prob-dist">
-                <span style="font-size:13px; opacity:0.6">P = [1/6, 1/6, 1/6, ...]</span>
+                <span style="font-size:11px; opacity:0.6">P = [1/6, 1/6, 1/6, ...]</span>
               </div>
             </div>
 
             <div class="quiz-box" onclick="toggleQuiz(this)">
               <div class="quiz-question"><span>?</span> Think: If the die becomes unfair, does entropy go up or down?</div>
               <div class="quiz-answer">
-                It goes <strong>DOWN</strong>. <br>Entropy measures uncertainty. If the die is loaded (unfair), you can predict the outcome more easily, so the surprise (entropy) decreases.
+                It goes <b>DOWN</b>. <br>Entropy measures uncertainty. If the die is loaded (unfair), you can predict the outcome more easily, so the surprise (entropy) decreases.
               </div>
             </div>
           </div>
