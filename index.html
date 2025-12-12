@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Info Theory × ML Loss Explorer</title>
+  <style>
+    :root {
+      /* Palette: Midnight & Cyan */
+      --bg-app: #0f172a;
+      --bg-sidebar: #020617;
+      --bg-card: #1e293b;
+      --bg-input: #334155;
+      
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-accent: #38bdf8; /* Cyan-400 */
+      
+      --border: #334155;
+      
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      
+      --radius: 12px;
+      --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden; 
+      display: flex;
+    }
+
+    /* --- LAYOUT --- */
+    .app-container {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .app-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .brand {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      padding: 0 12px;
+    }
+    
+    .brand span { color: var(--text-accent); }
+
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item {
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s var(--ease);
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-item:hover {
+      background-color: rgba(255,255,255,0.03);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background-color: rgba(56, 189, 248, 0.1);
+      color: var(--text-accent);
+      border-color: rgba(56, 189, 248, 0.2);
+    }
+
+    /* --- MAIN CONTENT AREA --- */
+    .main-area {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      overflow: hidden;
+    }
+
+    @media (max-width: 900px) {
+      .main-area { 
+        grid-template-columns: 1fr; 
+        overflow-y: auto;
+        display: block;
+      }
+    }
+
+    /* --- LEFT PANE: THEORY --- */
+    .theory-pane {
+      padding: 40px;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+    }
+
+    .section-content { display: none; animation: fadeIn 0.4s var(--ease); }
+    .section-content.active { display: block; }
+
+    h1 { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: var(--text-primary); }
+    h2 { font-size: 11px; color: var(--text-accent); text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 12px 0; font-weight: 700; }
+    p { line-height: 1.6; color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
+    ul { padding-left: 20px; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+    li { margin-bottom: 6px; }
+
+    .badge {
+      font-size: 10px; padding: 2px 8px; border-radius: 99px;
+      border: 1px solid rgba(148,163,184,0.4); color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;
+    }
+    
+    .equation-box {
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 16px 0;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-accent);
+      overflow-x: auto;
+    }
+
+    .equation-step {
+      display: flex;
+      margin-bottom: 8px;
+    }
+    .equation-step:last-child { margin-bottom: 0; }
+    .eq-left { min-width: 120px; color: var(--text-secondary); }
+    .eq-right { color: var(--text-accent); }
+
+    .insight-card {
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 16px 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+    
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+    .chip { font-size: 11px; padding: 4px 10px; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 99px; color: var(--text-secondary); }
+
+    /* --- RIGHT PANE: LAB --- */
+    .lab-pane {
+      background-color: #0b1120;
+      padding: 32px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .lab-group { display: none; }
+    .lab-group.active { display: block; animation: fadeIn 0.4s var(--ease); }
+
+    .lab-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+
+    .lab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .lab-title { font-weight: 600; font-size: 15px; color: #fff; }
+    
+    /* CONTROLS */
+    .control-group { margin-bottom: 20px; }
+    .control-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+    .val-display { font-family: var(--font-mono); color: var(--text-accent); font-size: 12px; padding: 2px 6px; background: rgba(0,0,0,0.3); border-radius: 4px; }
+
+    input[type=range] {
+      -webkit-appearance: none; width: 100%; background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+      background: var(--text-accent); cursor: pointer; margin-top: -6px;
+      box-shadow: 0 0 10px rgba(56,189,248,0.4);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%; height: 4px; cursor: pointer; background: var(--bg-input); border-radius: 2px;
+    }
+
+    /* RESULTS */
+    .result-grid {
+      display: grid; gap: 8px; background: var(--bg-sidebar);
+      padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);
+    }
+    .result-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-secondary); }
+    .result-val { font-family: var(--font-mono); font-size: 13px; color: var(--text-accent); }
+    .hint { font-size: 12px; color: var(--text-secondary); opacity: 0.7; margin-top: 12px; line-height: 1.5; }
+
+    /* QUIZ BOX */
+    .quiz-box {
+      margin-top: 20px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      border: 1px dashed var(--border);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .quiz-box:hover { background: rgba(255,255,255,0.05); }
+    .quiz-question { font-size: 13px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .quiz-answer { 
+      font-size: 13px; color: var(--text-accent); margin-top: 8px; display: none; line-height: 1.5; 
+      padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .quiz-box.open .quiz-answer { display: block; }
+    .quiz-box.open { border-color: var(--text-accent); }
+
+    /* TOGGLE BUTTONS */
+    .toggle-row { display: flex; background: var(--bg-sidebar); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+    .toggle-btn {
+      flex: 1; border: none; background: transparent; color: var(--text-secondary);
+      padding: 8px; font-size: 12px; cursor: pointer; border-radius: 6px; font-weight: 600;
+    }
+    .toggle-btn.active { background: var(--bg-input); color: #fff; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <nav class="sidebar">
+      <div class="brand">
+        Info Theory <span>×</span> ML Loss
+      </div>
+      <div class="nav-menu">
+        <div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">Overview</div>
+        <div class="nav-item" data-tab="entropy" onclick="switchTab('entropy')">Entropy</div>
+        <div class="nav-item" data-tab="ce" onclick="switchTab('ce')">Cross-Entropy</div>
+        <div class="nav-item" data-tab="bce" onclick="switchTab('bce')">Binary CE & Sigmoid</div>
+        <div class="nav-item" data-tab="kl" onclick="switchTab('kl')">KL Divergence</div>
+        <div class="nav-item" data-tab="playground" onclick="switchTab('playground')">Playground</div>
+      </div>
+    </nav>
+
+    <main class="main-area">
+      
+      <div class="theory-pane">
+        
+        <div id="content-overview" class="section-content active">
+          <span class="badge">Concept Map</span>
+          <h1>Big Picture</h1>
+          
+          <h2>Mental Model</h2>
+          <div class="insight-card">
+            Think in terms of <strong style="color:white">surprise</strong> (information): when an event with probability <code>p</code> happens, its surprise is roughly <code>−log(p)</code>. The lower the probability, the higher the surprise.
+          </div>
+          <div class="equation-box">
+            Surprise of outcome x: &nbsp; I(x) = −log P(x)
+          </div>
+
+          <h2>Three core objects</h2>
+          <ul>
+            <li><b>Entropy H(P)</b>: natural uncertainty of the world following P.</li>
+            <li><b>Cross-Entropy H(P, Q)</b>: how surprised you are if the world is P but you assume Q.</li>
+            <li><b>KL Divergence KL(P‖Q)</b>: <i>extra</i> surprise you suffer because Q ≠ P.</li>
+          </ul>
+          <div class="equation-box">H(P, Q) = H(P) + KL(P‖Q)</div>
+        </div>
+
+        <div id="content-entropy" class="section-content">
+          <span class="badge">Uncertainty of Nature</span>
+          <h1>Entropy H(P)</h1>
+          
+          <h2>Definition</h2>
+          <p>Entropy is the <b>average surprise</b> when outcomes are drawn from a distribution P.</p>
+          <div class="equation-box">H(P) = − Σ P(x) log P(x)</div>
+
+          <h2>Intuition: Fair vs. Unfair Dice</h2>
+          <p>Imagine two different 6-sided dice:</p>
+          <ul>
+            <li><b>Fair Die:</b> Every side has probability 1/6. You have <i>no idea</i> what will happen next. The uncertainty is maximized. <br><span style="color:var(--text-accent)">Entropy is High.</span></li>
+            <li><b>Loaded (Unfair) Die:</b> One side comes up 90% of the time. You are fairly certain what will happen. <br><span style="color:var(--text-accent)">Entropy is Low.</span></li>
+          </ul>
+          <div class="insight-card">
+            Entropy measures <b>unpredictability</b>. If a system is rigged (deterministic), entropy drops towards zero.
+          </div>
+        </div>
+
+        <div id="content-ce" class="section-content">
+          <span class="badge">Multi-Class (Softmax)</span>
+          <h1>Cross-Entropy Loss</h1>
+          
+          <h2>Definition</h2>
+          <p>Cross-entropy H(P, Q) is the average surprise if the world follows P but you <b>use Q to measure probabilities</b>.</p>
+          <div class="equation-box">H(P, Q) = − Σ P(x) log Q(x)</div>
+
+          <h2>In classification with one-hot labels</h2>
+          <p>For a single sample, let the correct class be <code>k</code>. Then:</p>
+          <div class="equation-box">P(k) = 1, &nbsp; P(j≠k) = 0</div>
+          <p>Cross-entropy simplifies to:</p>
+          <div class="equation-box">H(P, Q) = −log Q(k)</div>
+          <div class="insight-card">
+            Because P is 100% certain on the label, H(P)=0. Thus Cross-Entropy becomes purely KL Divergence (the error).
+          </div>
+        </div>
+
+        <div id="content-bce" class="section-content">
+          <span class="badge">Binary / Multi-Label</span>
+          <h1>Binary Cross-Entropy & Sigmoid</h1>
+          
+          <h2>Sigmoid as probability</h2>
+          <div class="equation-box">σ(z) = 1 / (1 + e<sup>−z</sup>)</div>
+
+          <h2>Binary cross-entropy (per label)</h2>
+          <p>For a single yes/no label with true value y ∈ {0,1} and predicted probability p:</p>
+          <div class="equation-box">L = −[ y log(p) + (1−y) log(1−p) ]</div>
+          <div class="insight-card">
+            This effectively runs two separate loss checks: "Did you assign high probability if True?" and "Did you assign low probability if False?"
+          </div>
+        </div>
+
+        <div id="content-kl" class="section-content">
+          <span class="badge">Extra Surprise</span>
+          <h1>KL Divergence</h1>
+          
+          <h2>Definition</h2>
+          <p>KL measures how many extra bits of surprise you suffer because you use the wrong model Q for a world that follows P.</p>
+
+          <h2>Derivation from H(P,Q) - H(P)</h2>
+          <p>We know that Cross-Entropy is Entropy plus KL. Let's solve for KL:</p>
+          <div class="equation-box">
+            <div class="equation-step">
+              <div class="eq-left">KL(P‖Q) =</div>
+              <div class="eq-right">H(P, Q) − H(P)</div>
+            </div>
+            <div class="equation-step">
+              <div class="eq-left">=</div>
+              <div class="eq-right">−Σ P(x) log Q(x) − [−Σ P(x) log P(x)]</div>
+            </div>
+            <div class="equation-step">
+              <div class="eq-left">=</div>
+              <div class="eq-right">Σ P(x) log P(x) − Σ P(x) log Q(x)</div>
+            </div>
+            <div class="equation-step">
+              <div class="eq-left">=</div>
+              <div class="eq-right">Σ P(x) [ log P(x) − log Q(x) ]</div>
+            </div>
+            <div class="equation-step" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
+              <div class="eq-left">Final Formula:</div>
+              <div class="eq-right">Σ P(x) log( P(x) / Q(x) )</div>
+            </div>
+          </div>
+          <p>The "ratio" inside the log explains why it's a divergence. If P(x) = Q(x), the ratio is 1, and log(1) is 0.</p>
+        </div>
+
+        <div id="content-playground" class="section-content">
+          <span class="badge">Interactive</span>
+          <h1>Playground</h1>
+          <p>Use the panels on the right to interact with the concepts.</p>
+        </div>
+
+      </div>
+
+      <div class="lab-pane">
+        
+        <div id="lab-overview" class="lab-group active">
+           <div class="lab-card">
+             <div class="lab-header">
+               <div class="lab-title">Cheat Sheet</div>
+               <span class="badge" style="margin:0">At a Glance</span>
+             </div>
+             <div class="result-grid">
+               <div class="result-item"><span>Entropy</span> <span style="color:#fff">How hard is the game?</span></div>
+               <div class="result-item"><span>CE</span> <span style="color:#fff">How hard using my model?</span></div>
+               <div class="result-item"><span>KL</span> <span style="color:#fff">How much worse is my model?</span></div>
+             </div>
+             <div class="hint">Select a tab from the sidebar to open a specific calculator.</div>
+           </div>
+        </div>
+        
+        <div id="lab-playground" class="lab-group">
+          <div class="lab-card">
+            <div class="lab-header">
+              <div class="lab-title">Comparison Lab</div>
+              <span class="badge" style="margin:0">CE vs BCE</span>
+            </div>
+            <div class="control-group">
+              <div class="control-label"><span>p(correct)</span> <span class="val-display" id="disp-combo-p">0.20</span></div>
+              <input type="range" min="1" max="99" value="20" id="input-combo-p">
+            </div>
+            <div class="result-grid">
+              <div class="result-item"><span>Softmax CE</span> <span class="result-val" id="res-combo-ce">1.609</span></div>
+              <div class="result-item"><span>BCE (y=1)</span> <span class="result-val" id="res-combo-bce1">1.609</span></div>
+            </div>
+            <div class="quiz-box" onclick="toggleQuiz(this)">
+              <div class="quiz-question"><span>?</span> Comparison Challenge</div>
+              <div class="quiz-answer">
+                Softmax CE and BCE (where y=1) produce the exact same loss curve wrt probability. The difference is only in how that probability is normalized (against all classes vs against just 0/1).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="lab-entropy" class="lab-group">
+          <div class="lab-card">
+            <div class="lab-header">
+              <div class="lab-title">Entropy: The Die Roll</div>
+              <span class="badge" style="margin:0">Dice Toy</span>
+            </div>
+            <div class="control-group">
+              <div class="control-label">
+                <span>Sides (N)</span>
+                <span class="val-display" id="disp-ent-n">6</span>
+              </div>
+              <input type="range" min="2" max="10" value="6" id="input-ent-n">
+            </div>
+
+            <div class="control-group">
+              <div class="control-label"><span>Die Fairness</span></div>
+              <div class="toggle-row">
+                <button class="toggle-btn active" id="btn-fair" onclick="setFairness(true)">Fair (Uniform)</button>
+                <button class="toggle-btn" id="btn-unfair" onclick="setFairness(false)">Unfair (Loaded)</button>
+              </div>
+            </div>
+
+            <div class="result-grid" style="margin-top:12px">
+              <div class="result-item">
+                <span>Entropy (bits)</span>
+                <span class="result-val" id="res-ent-val">2.585</span>
+              </div>
+              <div class="result-item" id="row-prob-dist">
+                <span style="font-size:11px; opacity:0.6">P = [1/6, 1/6, 1/6, ...]</span>
+              </div>
+            </div>
+
+            <div class="quiz-box" onclick="toggleQuiz(this)">
+              <div class="quiz-question"><span>?</span> Think: If the die becomes unfair, does entropy go up or down?</div>
+              <div class="quiz-answer">
+                It goes <b>DOWN</b>. <br>Entropy measures uncertainty. If the die is loaded (unfair), you can predict the outcome more easily, so the surprise (entropy) decreases.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="lab-ce" class="lab-group">
+          <div class="lab-card">
+            <div class="lab-header">
+              <div class="lab-title">Cross-Entropy Playground</div>
+              <span class="badge" style="margin:0">Softmax Style</span>
+            </div>
+            <div class="control-group">
+              <div class="control-label">
+                <span>p(correct)</span>
+                <span class="val-display" id="disp-ce-p">0.70</span>
+              </div>
+              <input type="range" min="1" max="99" value="70" id="input-ce-p">
+            </div>
+            <div class="result-grid" style="margin-top:12px">
+              <div class="result-item"><span>Loss = −ln(p)</span> <span class="result-val" id="res-ce-loss">0.357</span></div>
+            </div>
+            <div class="quiz-box" onclick="toggleQuiz(this)">
+              <div class="quiz-question"><span>?</span> Why does loss approach infinity as p → 0?</div>
+              <div class="quiz-answer">
+                Because you are saying an event is "impossible" (p=0), but it actually happened (y=1). The surprise is infinite.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="lab-bce" class="lab-group">
+          <div class="lab-card">
+            <div class="lab-header">
+              <div class="lab-title">Binary CE & Sigmoid</div>
+              <span class="badge" style="margin:0">Bernoulli</span>
+            </div>
+            <div class="control-group">
+              <div class="control-label"><span>Logit z</span> <span class="val-display" id="disp-bce-z">2.00</span></div>
+              <input type="range" min="-600" max="600" value="200" id="input-bce-z">
+            </div>
+            <div class="control-group">
+              <div class="toggle-row">
+                <button class="toggle-btn active" id="btn-y-1" onclick="setBceY(1)">y = 1</button>
+                <button class="toggle-btn" id="btn-y-0" onclick="setBceY(0)">y = 0</button>
+              </div>
+            </div>
+            <div class="result-grid">
+              <div class="result-item"><span>Sigmoid σ(z)</span><span class="result-val" id="res-bce-p">0.88</span></div>
+              <div class="result-item"><span>BCE loss</span><span class="result-val" id="res-bce-loss">0.129</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="lab-kl" class="lab-group">
+          <div class="lab-card">
+            <div class="lab-header">
+              <div class="lab-title">KL Calculator</div>
+              <span class="badge" style="margin:0">Numeric</span>
+            </div>
+            <div class="control-group">
+              <div class="control-label"><span>True p (P[1])</span> <span class="val-display" id="disp-kl-p">0.50</span></div>
+              <input type="range" min="1" max="99" value="50" id="input-kl-p">
+            </div>
+            <div class="control-group">
+              <div class="control-label"><span>Model q (Q[1])</span> <span class="val-display" id="disp-kl-q">0.90</span></div>
+              <input type="range" min="1" max="99" value="90" id="input-kl-q">
+            </div>
+            <div class="result-grid">
+              <div class="result-item"><span>Entropy H(P)</span> <span class="result-val" id="res-kl-h">0.693</span></div>
+              <div class="result-item"><span>Cross-Ent H(P,Q)</span> <span class="result-val" id="res-kl-ce">1.228</span></div>
+              <div class="result-item"><span>KL(P‖Q)</span> <span class="result-val" id="res-kl-val">0.535</span></div>
+            </div>
+            <div class="quiz-box" onclick="toggleQuiz(this)">
+              <div class="quiz-question"><span>?</span> When is KL Divergence exactly zero?</div>
+              <div class="quiz-answer">
+                Only when P = Q exactly. If your model's beliefs perfectly match reality, there is no "divergence" or extra surprise.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+<script>
+  /* --- UI LOGIC --- */
+  function switchTab(id) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const activeItem = document.querySelector(`.nav-item[data-tab="${id}"]`);
+    if(activeItem) activeItem.classList.add('active');
+
+    document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+    const contentId = 'content-' + id;
+    const contentEl = document.getElementById(contentId) || document.getElementById('content-overview');
+    contentEl.classList.add('active');
+
+    document.querySelectorAll('.lab-group').forEach(el => el.classList.remove('active'));
+    const labId = 'lab-' + id;
+    const labEl = document.getElementById(labId) || document.getElementById('lab-overview');
+    labEl.classList.add('active');
+  }
+
+  function toggleQuiz(el) {
+    el.classList.toggle('open');
+  }
+
+  /* --- MATH LOGIC --- */
+  const safeLog = (x) => Math.log(Math.max(x, 1e-12));
+  const sigmoid = (z) => {
+      if (z >= 0) return 1 / (1 + Math.exp(-z));
+      else return Math.exp(z) / (1 + Math.exp(z));
+  };
+
+  /* 1. ENTROPY LOGIC (UPDATED) */
+  const inpEntN = document.getElementById('input-ent-n');
+  let isFair = true;
+
+  function updateEntropy() {
+    const N = parseInt(inpEntN.value);
+    document.getElementById('disp-ent-n').innerText = "N = " + N;
+    
+    let H = 0;
+    let desc = "";
+
+    if(isFair) {
+      // Uniform: p = 1/N
+      H = Math.log2(N);
+      desc = "P = uniform";
+    } else {
+      // Unfair: Skewed distribution (simulated)
+      // Assume one side has 90% probability, others split 10%
+      const pMax = 0.9;
+      const pRest = 0.1 / (N - 1);
+      
+      // H = - [ pMax*log(pMax) + (N-1)*pRest*log(pRest) ]
+      H = - ( pMax * Math.log2(pMax) + (N-1) * pRest * Math.log2(pRest) );
+      desc = "P = [0.9, ...]";
+    }
+
+    document.getElementById('res-ent-val').innerText = H.toFixed(3);
+    document.getElementById('row-prob-dist').innerHTML = `<span style="font-size:11px; opacity:0.6">${desc}</span>`;
+  }
+
+  function setFairness(fair) {
+    isFair = fair;
+    document.getElementById('btn-fair').classList.toggle('active', fair);
+    document.getElementById('btn-unfair').classList.toggle('active', !fair);
+    updateEntropy();
+  }
+
+  if(inpEntN) inpEntN.addEventListener('input', updateEntropy);
+
+
+  /* 2. CROSS ENTROPY */
+  const inpCeP = document.getElementById('input-ce-p');
+  if(inpCeP) inpCeP.addEventListener('input', (e) => {
+    const p = parseInt(e.target.value) / 100;
+    document.getElementById('disp-ce-p').innerText = p.toFixed(2);
+    document.getElementById('res-ce-loss').innerText = (-Math.log(p)).toFixed(3);
+  });
+
+  /* 3. BCE */
+  let bceY = 1;
+  const inpBceZ = document.getElementById('input-bce-z');
+  
+  function updateBCE() {
+    const z = parseInt(inpBceZ.value) / 100;
+    const p = sigmoid(z);
+    
+    document.getElementById('disp-bce-z').innerText = z.toFixed(2);
+    document.getElementById('res-bce-p').innerText = p.toFixed(4); 
+    
+    let loss;
+    if (bceY === 1) loss = -Math.log(p);
+    else loss = -Math.log(1 - p);
+    
+    document.getElementById('res-bce-loss').innerText = loss.toFixed(4);
+  }
+
+  function setBceY(val) {
+    bceY = val;
+    document.getElementById('btn-y-0').classList.toggle('active', val === 0);
+    document.getElementById('btn-y-1').classList.toggle('active', val === 1);
+    updateBCE();
+  }
+  if(inpBceZ) inpBceZ.addEventListener('input', updateBCE);
+
+  /* 4. KL DIVERGENCE */
+  const inpKlP = document.getElementById('input-kl-p');
+  const inpKlQ = document.getElementById('input-kl-q');
+
+  function updateKL() {
+    const p = parseInt(inpKlP.value) / 100;
+    const q = parseInt(inpKlQ.value) / 100;
+    
+    document.getElementById('disp-kl-p').innerText = p.toFixed(2);
+    document.getElementById('disp-kl-q').innerText = q.toFixed(2);
+
+    const p0 = 1 - p;
+    const q0 = 1 - q;
+
+    const h_p = -(p * safeLog(p) + p0 * safeLog(p0));
+    const ce_pq = -(p * safeLog(q) + p0 * safeLog(q0));
+    const kl = ce_pq - h_p;
+
+    document.getElementById('res-kl-h').innerText = h_p.toFixed(3);
+    document.getElementById('res-kl-ce').innerText = ce_pq.toFixed(3);
+    document.getElementById('res-kl-val').innerText = kl.toFixed(3);
+  }
+  if(inpKlP) { inpKlP.addEventListener('input', updateKL); inpKlQ.addEventListener('input', updateKL); }
+
+  /* 5. COMBO */
+  const inpComboP = document.getElementById('input-combo-p');
+  if(inpComboP) inpComboP.addEventListener('input', (e) => {
+    const p = parseInt(e.target.value) / 100;
+    document.getElementById('disp-combo-p').innerText = p.toFixed(2);
+    const valP = Math.max(p, 1e-12);
+    document.getElementById('res-combo-ce').innerText = (-Math.log(valP)).toFixed(3);
+    document.getElementById('res-combo-bce1').innerText = (-Math.log(valP)).toFixed(3);
+  });
+
+  // Init
+  updateEntropy();
+  updateBCE();
+  updateKL();
+
+</script>
+</body>
+</html>
