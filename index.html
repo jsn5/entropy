@@ -1,736 +1,1065 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Info Theory × ML Loss Explorer</title>
-  <style>
-    :root {
-      /* Palette: Midnight & Cyan */
-      --bg-app: #0f172a;
-      --bg-sidebar: #020617;
-      --bg-card: #1e293b;
-      --bg-input: #334155;
-      
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-accent: #38bdf8; /* Cyan-400 */
-      
-      --border: #334155;
-      
-      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-      
-      --radius: 12px;
-      --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Information Theory for ML: From Bits to Loss Functions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+    <style>
+        :root {
+            --bg: #faf9f7;
+            --bg-card: #fff;
+            --text: #37352f;
+            --text-muted: #6b7280;
+            --accent: #c45d4a;
+            --accent-light: rgba(196, 93, 74, 0.1);
+            --border: #e5e4e2;
+            --success: #2ea043;
+            --blue: #4a90e2;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+        .container {
+            max-width: 740px;
+            margin: 0 auto;
+            padding: 60px 24px 100px;
+        }
+        header {
+            margin-bottom: 48px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        h2 {
+            font-size: 22px;
+            font-weight: 600;
+            margin: 48px 0 16px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+        h2:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+        h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin: 32px 0 12px;
+        }
+        p { margin-bottom: 16px; }
+        article { margin-bottom: 48px; }
 
-    * { box-sizing: border-box; }
+        /* Section labels */
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
 
-    body {
-      margin: 0;
-      background-color: var(--bg-app);
-      color: var(--text-primary);
-      font-family: var(--font-sans);
-      height: 100vh;
-      overflow: hidden; 
-      display: flex;
-    }
+        /* Equation blocks */
+        .equation-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .equation-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .equation-explanation {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 12px;
+            text-align: left;
+        }
 
-    /* --- LAYOUT --- */
-    .app-container {
-      display: grid;
-      grid-template-columns: 240px 1fr;
-      width: 100%;
-      height: 100%;
-    }
+        /* Code blocks */
+        .code-breakdown {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .code-breakdown-header {
+            background: #f5f4f2;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .code-breakdown-header .title {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .code-breakdown-header .lang {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            background: var(--bg);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .code-breakdown pre {
+            margin: 0;
+            padding: 20px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .code-breakdown .comment { color: #6b7280; font-style: italic; }
+        .code-breakdown .keyword { color: #9333ea; }
+        .code-breakdown .function { color: var(--accent); }
+        .code-breakdown .variable { color: #1e40af; }
+        .code-breakdown .number { color: #0891b2; }
+        .code-breakdown .string { color: #16a34a; }
+        .code-breakdown .highlight-line {
+            display: inline-block;
+            width: calc(100% + 40px);
+            margin-left: -20px;
+            padding-left: 17px;
+            background: linear-gradient(90deg, var(--accent-light) 0%, transparent 100%);
+            border-left: 3px solid var(--accent);
+        }
 
-    @media (max-width: 900px) {
-      .app-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-    }
+        /* Visualizations */
+        .visualization {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .viz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .viz-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .viz-canvas-container {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .viz-canvas-container canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .viz-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .viz-stats {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: var(--bg);
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .stat-label { color: var(--text-muted); }
+        .stat-value {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--text);
+        }
 
-    /* --- SIDEBAR --- */
-    .sidebar {
-      background-color: var(--bg-sidebar);
-      border-right: 1px solid var(--border);
-      padding: 24px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
+        /* Controls */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .slider-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            min-width: fit-content;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+            flex: 1;
+            min-width: 120px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(196,93,74,0.3);
+        }
+        .parameter-display {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 4px 10px;
+            border-radius: 4px;
+            min-width: 80px;
+            text-align: center;
+        }
+        button {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        button:hover { background: var(--bg); }
+        button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        button.secondary {
+            background: transparent;
+        }
+        select {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--bg-card);
+            cursor: pointer;
+        }
 
-    .brand {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text-primary);
-      padding: 0 12px;
-    }
-    
-    .brand span { color: var(--text-accent); }
+        /* Callouts */
+        .callout {
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 15px;
+        }
+        .callout.blue {
+            background: rgba(74, 144, 226, 0.08);
+            border-left: 3px solid var(--blue);
+        }
+        .callout.accent {
+            background: var(--accent-light);
+            border-left: 3px solid var(--accent);
+        }
+        .callout-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
 
-    .nav-menu {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+        /* Footer */
+        footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--text-muted);
+        }
 
-    .nav-item {
-      padding: 10px 12px;
-      border-radius: var(--radius);
-      color: var(--text-secondary);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s var(--ease);
-      border: 1px solid transparent;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+        /* Toggle buttons */
+        .toggle-group {
+            display: flex;
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+        .toggle-group button {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        .toggle-group button.active {
+            background: var(--bg-card);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
 
-    .nav-item:hover {
-      background-color: rgba(255,255,255,0.03);
-      color: var(--text-primary);
-    }
-
-    .nav-item.active {
-      background-color: rgba(56, 189, 248, 0.1);
-      color: var(--text-accent);
-      border-color: rgba(56, 189, 248, 0.2);
-    }
-
-    /* --- MAIN CONTENT AREA --- */
-    .main-area {
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-      overflow: hidden;
-    }
-
-    @media (max-width: 900px) {
-      .main-area { 
-        grid-template-columns: 1fr; 
-        overflow-y: auto;
-        display: block;
-      }
-    }
-
-    /* --- LEFT PANE: THEORY --- */
-    .theory-pane {
-      padding: 40px;
-      overflow-y: auto;
-      border-right: 1px solid var(--border);
-    }
-
-    .section-content { display: none; animation: fadeIn 0.4s var(--ease); }
-    .section-content.active { display: block; }
-
-    h1 { font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: var(--text-primary); }
-    h2 { font-size: 11px; color: var(--text-accent); text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 12px 0; font-weight: 700; }
-    p { line-height: 1.6; color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; }
-    ul { padding-left: 20px; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
-    li { margin-bottom: 6px; }
-
-    .badge {
-      font-size: 10px; padding: 2px 8px; border-radius: 99px;
-      border: 1px solid rgba(148,163,184,0.4); color: var(--text-secondary);
-      text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;
-    }
-    
-    .equation-box {
-      background: var(--bg-sidebar);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin: 16px 0;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      color: var(--text-accent);
-      overflow-x: auto;
-    }
-
-    .equation-step {
-      display: flex;
-      margin-bottom: 8px;
-    }
-    .equation-step:last-child { margin-bottom: 0; }
-    .eq-left { min-width: 120px; color: var(--text-secondary); }
-    .eq-right { color: var(--text-accent); }
-
-    .insight-card {
-      background: rgba(56, 189, 248, 0.05);
-      border: 1px solid rgba(56, 189, 248, 0.15);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin: 16px 0;
-      font-size: 13px;
-      line-height: 1.6;
-      color: var(--text-secondary);
-    }
-    
-    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
-    .chip { font-size: 11px; padding: 4px 10px; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 99px; color: var(--text-secondary); }
-
-    /* --- RIGHT PANE: LAB --- */
-    .lab-pane {
-      background-color: #0b1120;
-      padding: 32px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .lab-group { display: none; }
-    .lab-group.active { display: block; animation: fadeIn 0.4s var(--ease); }
-
-    .lab-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
-    }
-
-    .lab-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .lab-title { font-weight: 600; font-size: 15px; color: #fff; }
-    
-    /* CONTROLS */
-    .control-group { margin-bottom: 20px; }
-    .control-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
-    .val-display { font-family: var(--font-mono); color: var(--text-accent); font-size: 12px; padding: 2px 6px; background: rgba(0,0,0,0.3); border-radius: 4px; }
-
-    input[type=range] {
-      -webkit-appearance: none; width: 100%; background: transparent;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
-      background: var(--text-accent); cursor: pointer; margin-top: -6px;
-      box-shadow: 0 0 10px rgba(56,189,248,0.4);
-    }
-    input[type=range]::-webkit-slider-runnable-track {
-      width: 100%; height: 4px; cursor: pointer; background: var(--bg-input); border-radius: 2px;
-    }
-
-    /* RESULTS */
-    .result-grid {
-      display: grid; gap: 8px; background: var(--bg-sidebar);
-      padding: 16px; border-radius: var(--radius); border: 1px solid var(--border);
-    }
-    .result-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-secondary); }
-    .result-val { font-family: var(--font-mono); font-size: 13px; color: var(--text-accent); }
-    .hint { font-size: 12px; color: var(--text-secondary); opacity: 0.7; margin-top: 12px; line-height: 1.5; }
-
-    /* QUIZ BOX */
-    .quiz-box {
-      margin-top: 20px;
-      padding: 12px;
-      background: rgba(255,255,255,0.03);
-      border-radius: 8px;
-      border: 1px dashed var(--border);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .quiz-box:hover { background: rgba(255,255,255,0.05); }
-    .quiz-box.open { border-color: var(--text-accent); }
-    .quiz-question { font-size: 13px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
-    .quiz-answer { 
-      font-size: 13px; color: var(--text-accent); margin-top: 8px; display: none; line-height: 1.5; 
-      padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .quiz-box.open .quiz-answer { display: block; }
-
-    /* TOGGLE BUTTONS */
-    .toggle-row { display: flex; background: var(--bg-sidebar); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
-    .toggle-btn {
-      flex: 1; border: none; background: transparent; color: var(--text-secondary);
-      padding: 8px; font-size: 12px; cursor: pointer; border-radius: 6px; font-weight: 600;
-    }
-    .toggle-btn.active { background: var(--bg-input); color: #fff; }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-  </style>
+        /* Bar chart */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 120px;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        .bar {
+            flex: 1;
+            background: var(--accent);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            transition: height 0.3s ease;
+            min-width: 30px;
+        }
+        .bar-label {
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+        .bar-value {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: var(--text);
+            font-family: var(--font-mono);
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>Information Theory for Machine Learning</h1>
+            <p class="subtitle">From bits to loss functions: why cross-entropy works</p>
+        </header>
 
-  <div class="app-container">
-    
-    <nav class="sidebar">
-      <div class="brand">
-        Info Theory <span>×</span> ML Loss
-      </div>
-      <div class="nav-menu">
-        <div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">Overview</div>
-        <div class="nav-item" data-tab="entropy" onclick="switchTab('entropy')">Entropy</div>
-        <div class="nav-item" data-tab="ce" onclick="switchTab('ce')">Cross-Entropy</div>
-        <div class="nav-item" data-tab="bce" onclick="switchTab('bce')">Binary CE & Sigmoid</div>
-        <div class="nav-item" data-tab="kl" onclick="switchTab('kl')">KL Divergence</div>
-        <div class="nav-item" data-tab="playground" onclick="switchTab('playground')">Playground</div>
-      </div>
-    </nav>
+        <article>
+            <p>Every ML practitioner uses cross-entropy loss. Few understand where it comes from. This tutorial builds it from first principles: surprise, entropy, and the cost of being wrong.</p>
 
-    <main class="main-area">
-      
-      <div class="theory-pane">
-        
-        <div id="content-overview" class="section-content active">
-          <span class="badge">Foundations</span>
-          <h1>The Atomic Unit</h1>
-          
-          <h2>Step 1: Surprise I(x)</h2>
-          <p>
-            Before we talk about Entropy, we must define the "Surprise" (or self-information) of a single event $x$.
-            If an event is rare, it is surprising. If it is certain, there is no surprise.
-          </p>
-          <div class="equation-box">
-             I(x) = -log₂ P(x)
-          </div>
-          <div class="insight-card">
-            <ul style="margin:0; padding-left:16px;">
-              <li><strong>P(x) = 1.0 (Certain):</strong> log(1) = 0. Zero bits of surprise.</li>
-              <li><strong>P(x) = 0.5 (Coin Flip):</strong> -log₂(0.5) = 1. One bit of surprise.</li>
-              <li><strong>P(x) = 0.0...1 (Rare):</strong> Large positive surprise.</li>
-            </ul>
-          </div>
+            <h2>Surprise: The Atomic Unit</h2>
+            <p class="section-label">Building block</p>
 
-          <h2>Step 2: Entropy H(P)</h2>
-          <p>
-            Entropy is simply the <strong>Expected Value</strong> (average) of the surprise for all possible outcomes.
-            It's the weighted sum of the surprise of every event.
-          </p>
-          <div class="equation-box">
-            <div class="equation-step">
-              <div class="eq-left">H(P)</div>
-              <div class="eq-right">= E [ I(x) ]</div>
-            </div>
-            <div class="equation-step">
-              <div class="eq-left"></div>
-              <div class="eq-right">= Σ P(x) · I(x)</div>
-            </div>
-            <div class="equation-step" style="border-top:1px solid rgba(255,255,255,0.1); margin-top:8px; padding-top:8px;">
-              <div class="eq-left"></div>
-              <div class="eq-right">= - Σ P(x) log₂ P(x)</div>
-            </div>
-          </div>
-          <p>
-            This formula tells us the "average amount of information" (in bits) we get from sampling this distribution.
-          </p>
+            <p>Start with a single event. If something unlikely happens, you're surprised. If something certain happens, you're not. We quantify this:</p>
 
-          <h2>Step 3: From Entropy to Loss</h2>
-          <p>
-            In Machine Learning, we don't know the true distribution P. We approximate it with a model Q.
-            Our loss function (Cross-Entropy) measures the <strong>average surprise</strong> of the true data P, when evaluated using our model Q.
-          </p>
-          <div class="chips">
-            <span class="chip">I(x) = Unit of info</span>
-            <span class="chip">H(P) = Average info</span>
-            <span class="chip">CE = Average info under Model Q</span>
-          </div>
-        </div>
-
-        <div id="content-entropy" class="section-content">
-          <span class="badge">Uncertainty of Nature</span>
-          <h1>Entropy H(P)</h1>
-          
-          <h2>Definition</h2>
-          <p>Entropy is the <b>average surprise</b> when outcomes are drawn from a distribution P.</p>
-          <div class="equation-box">H(P) = − Σ P(x) log P(x)</div>
-
-          <h2>Intuition: Fair vs. Unfair Dice</h2>
-          <p>Imagine two different 6-sided dice:</p>
-          <ul>
-            <li><b>Fair Die:</b> Every side has probability 1/6. You have <i>no idea</i> what will happen next. The uncertainty is maximized. <br><span style="color:var(--text-accent)">Entropy is High.</span></li>
-            <li><b>Loaded (Unfair) Die:</b> One side comes up 90% of the time. You are fairly certain what will happen. <br><span style="color:var(--text-accent)">Entropy is Low.</span></li>
-          </ul>
-          <div class="insight-card">
-            Entropy measures <b>unpredictability</b>. If a system is rigged (deterministic), entropy drops towards zero.
-          </div>
-        </div>
-
-        <div id="content-ce" class="section-content">
-          <span class="badge">Multi-Class (Softmax)</span>
-          <h1>Cross-Entropy Loss</h1>
-          
-          <h2>Definition</h2>
-          <p>Cross-entropy H(P, Q) is the average surprise if the world follows P but you <b>use Q to measure probabilities</b>.</p>
-          <div class="equation-box">H(P, Q) = − Σ P(x) log Q(x)</div>
-
-          <h2>In classification with one-hot labels</h2>
-          <p>For a single sample, let the correct class be <code>k</code>. Then:</p>
-          <div class="equation-box">P(k) = 1, &nbsp; P(j≠k) = 0</div>
-          <p>Cross-entropy simplifies to:</p>
-          <div class="equation-box">H(P, Q) = −log Q(k)</div>
-          <div class="insight-card">
-            Because P is 100% certain on the label, H(P)=0. Thus Cross-Entropy becomes purely KL Divergence (the error).
-          </div>
-        </div>
-
-        <div id="content-bce" class="section-content">
-          <span class="badge">Binary / Multi-Label</span>
-          <h1>Binary Cross-Entropy & Sigmoid</h1>
-          
-          <h2>Sigmoid as probability</h2>
-          <div class="equation-box">σ(z) = 1 / (1 + e<sup>−z</sup>)</div>
-
-          <h2>Binary cross-entropy (per label)</h2>
-          <p>For a single yes/no label with true value y ∈ {0,1} and predicted probability p:</p>
-          <div class="equation-box">L = −[ y log(p) + (1−y) log(1−p) ]</div>
-          <div class="insight-card">
-            This effectively runs two separate loss checks: "Did you assign high probability if True?" and "Did you assign low probability if False?"
-          </div>
-        </div>
-
-        <div id="content-kl" class="section-content">
-          <span class="badge">Extra Surprise</span>
-          <h1>KL Divergence</h1>
-          
-          <h2>Definition</h2>
-          <p>KL measures how many extra bits of surprise you suffer because you use the wrong model Q for a world that follows P.</p>
-
-          <h2>Derivation from H(P,Q) - H(P)</h2>
-          <p>We know that Cross-Entropy is Entropy plus KL. Let's solve for KL:</p>
-          <div class="equation-box">
-            <div class="equation-step">
-              <div class="eq-left">KL(P‖Q) =</div>
-              <div class="eq-right">H(P, Q) − H(P)</div>
-            </div>
-            <div class="equation-step">
-              <div class="eq-left">=</div>
-              <div class="eq-right">−Σ P(x) log Q(x) − [−Σ P(x) log P(x)]</div>
-            </div>
-            <div class="equation-step">
-              <div class="eq-left">=</div>
-              <div class="eq-right">Σ P(x) log P(x) − Σ P(x) log Q(x)</div>
-            </div>
-            <div class="equation-step">
-              <div class="eq-left">=</div>
-              <div class="eq-right">Σ P(x) [ log P(x) − log Q(x) ]</div>
-            </div>
-            <div class="equation-step" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
-              <div class="eq-left">Final Formula:</div>
-              <div class="eq-right">Σ P(x) log( P(x) / Q(x) )</div>
-            </div>
-          </div>
-          <p>The "ratio" inside the log explains why it's a divergence. If P(x) = Q(x), the ratio is 1, and log(1) is 0.</p>
-        </div>
-
-        <div id="content-playground" class="section-content">
-          <span class="badge">Interactive</span>
-          <h1>Playground</h1>
-          <p>Use the panels on the right to interact with the concepts.</p>
-        </div>
-
-      </div>
-
-      <div class="lab-pane">
-        
-        <div id="lab-overview" class="lab-group active">
-           <div class="lab-card">
-             <div class="lab-header">
-               <div class="lab-title">Cheat Sheet</div>
-               <span class="badge" style="margin:0">At a Glance</span>
-             </div>
-             <div class="result-grid">
-               <div class="result-item"><span>Surprise I(x)</span> <span style="color:#fff">-log P(x)</span></div>
-               <div class="result-item"><span>Entropy H(P)</span> <span style="color:#fff">Σ P(x)·I(x)</span></div>
-               <div class="result-item"><span>Cross-Ent H(P,Q)</span> <span style="color:#fff">Σ P(x)·I_model(x)</span></div>
-             </div>
-             <div class="hint">Select a tab from the sidebar to open a specific calculator.</div>
-           </div>
-        </div>
-        
-        <div id="lab-playground" class="lab-group">
-          <div class="lab-card">
-            <div class="lab-header">
-              <div class="lab-title">Comparison Lab</div>
-              <span class="badge" style="margin:0">CE vs BCE</span>
-            </div>
-            <div class="control-group">
-              <div class="control-label"><span>p(correct)</span> <span class="val-display" id="disp-combo-p">0.20</span></div>
-              <input type="range" min="1" max="99" value="20" id="input-combo-p">
-            </div>
-            <div class="result-grid">
-              <div class="result-item"><span>Softmax CE</span> <span class="result-val" id="res-combo-ce">1.609</span></div>
-              <div class="result-item"><span>BCE (y=1)</span> <span class="result-val" id="res-combo-bce1">1.609</span></div>
-            </div>
-            <div class="quiz-box" onclick="toggleQuiz(this)">
-              <div class="quiz-question"><span>?</span> Comparison Challenge</div>
-              <div class="quiz-answer">
-                Softmax CE and BCE (where y=1) produce the exact same loss curve wrt probability. The difference is only in how that probability is normalized (against all classes vs against just 0/1).
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="lab-entropy" class="lab-group">
-          <div class="lab-card">
-            <div class="lab-header">
-              <div class="lab-title">Entropy: The Die Roll</div>
-              <span class="badge" style="margin:0">Dice Toy</span>
-            </div>
-            <div class="control-group">
-              <div class="control-label">
-                <span>Sides (N)</span>
-                <span class="val-display" id="disp-ent-n">6</span>
-              </div>
-              <input type="range" min="2" max="10" value="6" id="input-ent-n">
+            <div class="equation-block">
+                <span class="equation-label">Surprise (Self-Information)</span>
+                $$I(x) = -\log_2 P(x)$$
+                <div class="equation-explanation">
+                    The negative log of probability. Rare events (low P) give high surprise. Certain events (P=1) give zero surprise.
+                </div>
             </div>
 
-            <div class="control-group">
-              <div class="control-label"><span>Die Fairness</span></div>
-              <div class="toggle-row">
-                <button class="toggle-btn active" id="btn-fair" onclick="setFairness(true)">Fair (Uniform)</button>
-                <button class="toggle-btn" id="btn-unfair" onclick="setFairness(false)">Unfair (Loaded)</button>
-              </div>
+            <div class="code-breakdown">
+                <div class="code-breakdown-header"><span class="title">surprise.py</span><span class="lang">python</span></div>
+<pre><span class="keyword">import</span> <span class="variable">math</span>
+
+<span class="keyword">def</span> <span class="function">surprise</span>(<span class="variable">p</span>):
+<span class="highlight-line">    <span class="keyword">return</span> -<span class="variable">math</span>.<span class="function">log2</span>(<span class="variable">p</span>)</span>
+
+<span class="function">surprise</span>(<span class="number">1.0</span>)   <span class="comment"># 0.0 bits (certain event)</span>
+<span class="function">surprise</span>(<span class="number">0.5</span>)   <span class="comment"># 1.0 bit  (coin flip)</span>
+<span class="function">surprise</span>(<span class="number">0.125</span>) <span class="comment"># 3.0 bits (1 in 8 chance)</span></pre>
             </div>
 
-            <div class="result-grid" style="margin-top:12px">
-              <div class="result-item">
-                <span>Entropy (bits)</span>
-                <span class="result-val" id="res-ent-val">2.585</span>
-              </div>
-              <div class="result-item" id="row-prob-dist">
-                <span style="font-size:11px; opacity:0.6">P = [1/6, 1/6, 1/6, ...]</span>
-              </div>
+            <div class="visualization">
+                <div class="viz-header">
+                    <span class="viz-title">Surprise vs Probability</span>
+                </div>
+                <div class="viz-canvas-container">
+                    <canvas id="surpriseCanvas" width="692" height="200"></canvas>
+                </div>
+                <div class="viz-controls">
+                    <div class="slider-container" style="flex: 1;">
+                        <span class="slider-label">P(x):</span>
+                        <input type="range" id="surpriseSlider" min="1" max="99" value="50">
+                        <span class="parameter-display" id="surpriseP">0.50</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Surprise:</span>
+                        <span class="stat-value" id="surpriseValue">1.00 bits</span>
+                    </div>
+                </div>
             </div>
 
-            <div class="quiz-box" onclick="toggleQuiz(this)">
-              <div class="quiz-question"><span>?</span> Think: If the die becomes unfair, does entropy go up or down?</div>
-              <div class="quiz-answer">
-                It goes <b>DOWN</b>. <br>Entropy measures uncertainty. If the die is loaded (unfair), you can predict the outcome more easily, so the surprise (entropy) decreases.
-              </div>
-            </div>
-          </div>
-        </div>
+            <p>The log base determines units. Base 2 gives bits. Base e gives nats (used in ML). The shape is the same.</p>
 
-        <div id="lab-ce" class="lab-group">
-          <div class="lab-card">
-            <div class="lab-header">
-              <div class="lab-title">Cross-Entropy Playground</div>
-              <span class="badge" style="margin:0">Softmax Style</span>
-            </div>
-            <div class="control-group">
-              <div class="control-label">
-                <span>p(correct)</span>
-                <span class="val-display" id="disp-ce-p">0.70</span>
-              </div>
-              <input type="range" min="1" max="99" value="70" id="input-ce-p">
-            </div>
-            <div class="result-grid" style="margin-top:12px">
-              <div class="result-item"><span>Loss = −ln(p)</span> <span class="result-val" id="res-ce-loss">0.357</span></div>
-            </div>
-            <div class="quiz-box" onclick="toggleQuiz(this)">
-              <div class="quiz-question"><span>?</span> Why does loss approach infinity as p → 0?</div>
-              <div class="quiz-answer">
-                Because you are saying an event is "impossible" (p=0), but it actually happened (y=1). The surprise is infinite.
-              </div>
-            </div>
-          </div>
-        </div>
+            <h2>Entropy: Average Surprise</h2>
+            <p class="section-label">Uncertainty of a distribution</p>
 
-        <div id="lab-bce" class="lab-group">
-          <div class="lab-card">
-            <div class="lab-header">
-              <div class="lab-title">Binary CE & Sigmoid</div>
-              <span class="badge" style="margin:0">Bernoulli</span>
-            </div>
-            <div class="control-group">
-              <div class="control-label"><span>Logit z</span> <span class="val-display" id="disp-bce-z">2.00</span></div>
-              <input type="range" min="-600" max="600" value="200" id="input-bce-z">
-            </div>
-            <div class="control-group">
-              <div class="toggle-row">
-                <button class="toggle-btn active" id="btn-y-1" onclick="setBceY(1)">y = 1</button>
-                <button class="toggle-btn" id="btn-y-0" onclick="setBceY(0)">y = 0</button>
-              </div>
-            </div>
-            <div class="result-grid">
-              <div class="result-item"><span>Sigmoid σ(z)</span><span class="result-val" id="res-bce-p">0.88</span></div>
-              <div class="result-item"><span>BCE loss</span><span class="result-val" id="res-bce-loss">0.129</span></div>
-            </div>
-          </div>
-        </div>
+            <p>Entropy is the expected surprise across all outcomes. Weight each outcome's surprise by its probability:</p>
 
-        <div id="lab-kl" class="lab-group">
-          <div class="lab-card">
-            <div class="lab-header">
-              <div class="lab-title">KL Calculator</div>
-              <span class="badge" style="margin:0">Numeric</span>
+            <div class="equation-block">
+                <span class="equation-label">Entropy</span>
+                $$H(P) = \mathbb{E}[I(x)] = -\sum_x P(x) \log P(x)$$
+                <div class="equation-explanation">
+                    High entropy = high uncertainty = outcomes are spread out. Low entropy = low uncertainty = outcomes are concentrated.
+                </div>
             </div>
-            <div class="control-group">
-              <div class="control-label"><span>True p (P[1])</span> <span class="val-display" id="disp-kl-p">0.50</span></div>
-              <input type="range" min="1" max="99" value="50" id="input-kl-p">
-            </div>
-            <div class="control-group">
-              <div class="control-label"><span>Model q (Q[1])</span> <span class="val-display" id="disp-kl-q">0.90</span></div>
-              <input type="range" min="1" max="99" value="90" id="input-kl-q">
-            </div>
-            <div class="result-grid">
-              <div class="result-item"><span>Entropy H(P)</span> <span class="result-val" id="res-kl-h">0.693</span></div>
-              <div class="result-item"><span>Cross-Ent H(P,Q)</span> <span class="result-val" id="res-kl-ce">1.228</span></div>
-              <div class="result-item"><span>KL(P‖Q)</span> <span class="result-val" id="res-kl-val">0.535</span></div>
-            </div>
-            <div class="quiz-box" onclick="toggleQuiz(this)">
-              <div class="quiz-question"><span>?</span> When is KL Divergence exactly zero?</div>
-              <div class="quiz-answer">
-                Only when P = Q exactly. If your model's beliefs perfectly match reality, there is no "divergence" or extra surprise.
-              </div>
-            </div>
-          </div>
-        </div>
 
-      </div>
-    </main>
-  </div>
+            <div class="code-breakdown">
+                <div class="code-breakdown-header"><span class="title">entropy.py</span><span class="lang">python</span></div>
+<pre><span class="keyword">def</span> <span class="function">entropy</span>(<span class="variable">probs</span>):
+    <span class="variable">total</span> = <span class="number">0</span>
+<span class="highlight-line">    <span class="keyword">for</span> <span class="variable">p</span> <span class="keyword">in</span> <span class="variable">probs</span>:</span>
+<span class="highlight-line">        <span class="keyword">if</span> <span class="variable">p</span> > <span class="number">0</span>:</span>
+<span class="highlight-line">            <span class="variable">total</span> += <span class="variable">p</span> * <span class="function">surprise</span>(<span class="variable">p</span>)</span>
+    <span class="keyword">return</span> <span class="variable">total</span>
+
+<span class="comment"># Fair coin: maximum entropy for 2 outcomes</span>
+<span class="function">entropy</span>([<span class="number">0.5</span>, <span class="number">0.5</span>])  <span class="comment"># 1.0 bit</span>
+<span class="comment"># Loaded coin: lower entropy</span>
+<span class="function">entropy</span>([<span class="number">0.9</span>, <span class="number">0.1</span>])  <span class="comment"># 0.47 bits</span></pre>
+            </div>
+
+            <div class="visualization">
+                <div class="viz-header">
+                    <span class="viz-title">Entropy of a Distribution</span>
+                </div>
+                <div class="bar-chart" id="entropyBars"></div>
+                <div class="viz-controls">
+                    <div class="slider-container" style="flex: 1;">
+                        <span class="slider-label">Outcomes:</span>
+                        <select id="entropyN">
+                            <option value="2">2</option>
+                            <option value="4">4</option>
+                            <option value="6" selected>6</option>
+                            <option value="8">8</option>
+                        </select>
+                    </div>
+                    <div class="toggle-group">
+                        <button id="btnFair" class="active" onclick="setDistribution('fair')">Uniform</button>
+                        <button id="btnLoaded" onclick="setDistribution('loaded')">Loaded</button>
+                    </div>
+                </div>
+                <div class="viz-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Entropy:</span>
+                        <span class="stat-value" id="entropyValue">2.58 bits</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Max possible:</span>
+                        <span class="stat-value" id="entropyMax">2.58 bits</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout blue">
+                <div class="callout-title">Key Insight</div>
+                <p style="margin: 0;">Entropy is maximized when all outcomes are equally likely. Any deviation from uniform reduces entropy. This is why loaded dice are "less random."</p>
+            </div>
+
+            <h2>Cross-Entropy: Surprise Under the Wrong Model</h2>
+            <p class="section-label">Where loss functions come from</p>
+
+            <p>In ML, we don't know the true distribution P. We have a model Q that approximates it. Cross-entropy measures the average surprise when the world follows P but we use Q to assign probabilities:</p>
+
+            <div class="equation-block">
+                <span class="equation-label">Cross-Entropy</span>
+                $$H(P, Q) = -\sum_x P(x) \log Q(x)$$
+                <div class="equation-explanation">
+                    We sample from P (reality) but measure surprise using Q (our model). If Q matches P, cross-entropy equals entropy. If Q is wrong, cross-entropy is higher.
+                </div>
+            </div>
+
+            <div class="code-breakdown">
+                <div class="code-breakdown-header"><span class="title">cross_entropy.py</span><span class="lang">python</span></div>
+<pre><span class="keyword">def</span> <span class="function">cross_entropy</span>(<span class="variable">p_true</span>, <span class="variable">q_model</span>):
+    <span class="variable">total</span> = <span class="number">0</span>
+<span class="highlight-line">    <span class="keyword">for</span> <span class="variable">p</span>, <span class="variable">q</span> <span class="keyword">in</span> <span class="function">zip</span>(<span class="variable">p_true</span>, <span class="variable">q_model</span>):</span>
+<span class="highlight-line">        <span class="keyword">if</span> <span class="variable">p</span> > <span class="number">0</span>:</span>
+<span class="highlight-line">            <span class="variable">total</span> += <span class="variable">p</span> * (-<span class="variable">math</span>.<span class="function">log</span>(<span class="variable">q</span>))  <span class="comment"># Note: natural log for ML</span></span>
+    <span class="keyword">return</span> <span class="variable">total</span></pre>
+            </div>
+
+            <h3>Classification: One-Hot Labels</h3>
+
+            <p>In classification, P is a one-hot vector: all probability on the true class k. Cross-entropy simplifies dramatically:</p>
+
+            <div class="equation-block">
+                <span class="equation-label">Classification Loss</span>
+                $$H(P, Q) = -\log Q(k)$$
+                <div class="equation-explanation">
+                    Since P(k)=1 and P(j≠k)=0, only the true class term survives. This is why softmax cross-entropy is just -log(predicted probability of correct class).
+                </div>
+            </div>
+
+            <div class="visualization">
+                <div class="viz-header">
+                    <span class="viz-title">Cross-Entropy Loss</span>
+                </div>
+                <div class="viz-canvas-container">
+                    <canvas id="ceCanvas" width="692" height="200"></canvas>
+                </div>
+                <div class="viz-controls">
+                    <div class="slider-container" style="flex: 1;">
+                        <span class="slider-label">Q(correct class):</span>
+                        <input type="range" id="ceSlider" min="1" max="99" value="70">
+                        <span class="parameter-display" id="ceP">0.70</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Loss:</span>
+                        <span class="stat-value" id="ceValue">0.36</span>
+                    </div>
+                </div>
+            </div>
+
+            <p>When Q(k) approaches 0, loss approaches infinity. The model is saying "this is impossible" but it happened. Infinite surprise.</p>
+
+            <h2>KL Divergence: The Cost of Being Wrong</h2>
+            <p class="section-label">Extra bits from model error</p>
+
+            <p>KL divergence is the difference between cross-entropy and entropy. It measures how many extra bits of surprise we suffer because our model Q differs from reality P:</p>
+
+            <div class="equation-block">
+                <span class="equation-label">KL Divergence</span>
+                $$D_{KL}(P \| Q) = H(P, Q) - H(P) = \sum_x P(x) \log \frac{P(x)}{Q(x)}$$
+                <div class="equation-explanation">
+                    If Q = P, the ratio is 1, log(1) = 0, and KL = 0. Any mismatch makes KL positive. KL is never negative.
+                </div>
+            </div>
+
+            <div class="code-breakdown">
+                <div class="code-breakdown-header"><span class="title">kl_divergence.py</span><span class="lang">python</span></div>
+<pre><span class="keyword">def</span> <span class="function">kl_divergence</span>(<span class="variable">p_true</span>, <span class="variable">q_model</span>):
+<span class="highlight-line">    <span class="keyword">return</span> <span class="function">cross_entropy</span>(<span class="variable">p_true</span>, <span class="variable">q_model</span>) - <span class="function">entropy</span>(<span class="variable">p_true</span>)</span>
+
+<span class="comment"># Equivalent direct formula:</span>
+<span class="keyword">def</span> <span class="function">kl_direct</span>(<span class="variable">p_true</span>, <span class="variable">q_model</span>):
+    <span class="variable">total</span> = <span class="number">0</span>
+    <span class="keyword">for</span> <span class="variable">p</span>, <span class="variable">q</span> <span class="keyword">in</span> <span class="function">zip</span>(<span class="variable">p_true</span>, <span class="variable">q_model</span>):
+        <span class="keyword">if</span> <span class="variable">p</span> > <span class="number">0</span>:
+            <span class="variable">total</span> += <span class="variable">p</span> * <span class="variable">math</span>.<span class="function">log</span>(<span class="variable">p</span> / <span class="variable">q</span>)
+    <span class="keyword">return</span> <span class="variable">total</span></pre>
+            </div>
+
+            <div class="visualization">
+                <div class="viz-header">
+                    <span class="viz-title">KL Divergence (Binary Case)</span>
+                </div>
+                <div class="viz-canvas-container">
+                    <canvas id="klCanvas" width="692" height="200"></canvas>
+                </div>
+                <div class="viz-controls">
+                    <div class="slider-container">
+                        <span class="slider-label">True P:</span>
+                        <input type="range" id="klPSlider" min="1" max="99" value="50">
+                        <span class="parameter-display" id="klPValue">0.50</span>
+                    </div>
+                    <div class="slider-container">
+                        <span class="slider-label">Model Q:</span>
+                        <input type="range" id="klQSlider" min="1" max="99" value="80">
+                        <span class="parameter-display" id="klQValue">0.80</span>
+                    </div>
+                </div>
+                <div class="viz-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">H(P):</span>
+                        <span class="stat-value" id="klEntropy">0.69</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">H(P,Q):</span>
+                        <span class="stat-value" id="klCE">0.80</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">KL(P||Q):</span>
+                        <span class="stat-value" id="klValue">0.11</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout accent">
+                <div class="callout-title">Why Minimize Cross-Entropy?</div>
+                <p style="margin: 0;">In classification, H(P) is fixed (it's 0 for one-hot labels). So minimizing cross-entropy H(P,Q) is equivalent to minimizing KL divergence. We're pushing our model Q toward the true distribution P.</p>
+            </div>
+
+            <h2>Binary Cross-Entropy</h2>
+            <p class="section-label">Sigmoid output</p>
+
+            <p>For binary classification, we have one output p = σ(z) representing P(y=1). The loss handles both cases:</p>
+
+            <div class="equation-block">
+                <span class="equation-label">Binary Cross-Entropy</span>
+                $$L = -[y \log(p) + (1-y) \log(1-p)]$$
+                <div class="equation-explanation">
+                    If y=1, we want p high. If y=0, we want p low (so 1-p high). The formula penalizes confident wrong predictions heavily.
+                </div>
+            </div>
+
+            <div class="code-breakdown">
+                <div class="code-breakdown-header"><span class="title">bce.py</span><span class="lang">python</span></div>
+<pre><span class="keyword">def</span> <span class="function">sigmoid</span>(<span class="variable">z</span>):
+    <span class="keyword">return</span> <span class="number">1</span> / (<span class="number">1</span> + <span class="variable">math</span>.<span class="function">exp</span>(-<span class="variable">z</span>))
+
+<span class="keyword">def</span> <span class="function">bce_loss</span>(<span class="variable">y_true</span>, <span class="variable">p_pred</span>):
+<span class="highlight-line">    <span class="keyword">if</span> <span class="variable">y_true</span> == <span class="number">1</span>:</span>
+<span class="highlight-line">        <span class="keyword">return</span> -<span class="variable">math</span>.<span class="function">log</span>(<span class="variable">p_pred</span>)</span>
+<span class="highlight-line">    <span class="keyword">else</span>:</span>
+<span class="highlight-line">        <span class="keyword">return</span> -<span class="variable">math</span>.<span class="function">log</span>(<span class="number">1</span> - <span class="variable">p_pred</span>)</span></pre>
+            </div>
+
+            <div class="visualization">
+                <div class="viz-header">
+                    <span class="viz-title">BCE Loss</span>
+                </div>
+                <div class="viz-canvas-container">
+                    <canvas id="bceCanvas" width="692" height="200"></canvas>
+                </div>
+                <div class="viz-controls">
+                    <div class="slider-container">
+                        <span class="slider-label">Logit z:</span>
+                        <input type="range" id="bceZSlider" min="-400" max="400" value="100">
+                        <span class="parameter-display" id="bceZ">1.00</span>
+                    </div>
+                    <div class="toggle-group">
+                        <button id="bceY1" class="active" onclick="setBceY(1)">y = 1</button>
+                        <button id="bceY0" onclick="setBceY(0)">y = 0</button>
+                    </div>
+                </div>
+                <div class="viz-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">σ(z):</span>
+                        <span class="stat-value" id="bceSigmoid">0.73</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Loss:</span>
+                        <span class="stat-value" id="bceLoss">0.31</span>
+                    </div>
+                </div>
+            </div>
+
+            <h2>The Takeaway</h2>
+
+            <div class="code-breakdown">
+                <div class="code-breakdown-header"><span class="title">summary.py</span><span class="lang">python</span></div>
+<pre><span class="comment"># Surprise: information from one event</span>
+<span class="variable">I</span> = -<span class="function">log</span>(<span class="variable">p</span>)
+
+<span class="comment"># Entropy: average surprise (uncertainty of P)</span>
+<span class="variable">H_P</span> = <span class="function">sum</span>(<span class="variable">p</span> * -<span class="function">log</span>(<span class="variable">p</span>) <span class="keyword">for</span> <span class="variable">p</span> <span class="keyword">in</span> <span class="variable">P</span>)
+
+<span class="comment"># Cross-entropy: average surprise using wrong model</span>
+<span class="variable">H_PQ</span> = <span class="function">sum</span>(<span class="variable">p</span> * -<span class="function">log</span>(<span class="variable">q</span>) <span class="keyword">for</span> <span class="variable">p</span>, <span class="variable">q</span> <span class="keyword">in</span> <span class="function">zip</span>(<span class="variable">P</span>, <span class="variable">Q</span>))
+
+<span class="comment"># KL divergence: extra surprise from model error</span>
+<span class="variable">KL</span> = <span class="variable">H_PQ</span> - <span class="variable">H_P</span>
+
+<span class="comment"># Classification: P is one-hot, so H_P = 0</span>
+<span class="comment"># Loss = H_PQ = -log(q_correct) = KL</span></pre>
+            </div>
+
+            <p>Cross-entropy loss is not arbitrary. It measures how surprised we are by the true labels when we use our model's predicted probabilities. Minimizing it pushes our model toward reality.</p>
+
+        </article>
+
+        <footer>
+            <p>Interactive visualizations in vanilla JavaScript. No frameworks.</p>
+        </footer>
+    </div>
 
 <script>
-  /* --- UI LOGIC --- */
-  function switchTab(id) {
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    const activeItem = document.querySelector(`.nav-item[data-tab="${id}"]`);
-    if(activeItem) activeItem.classList.add('active');
+// Utility functions
+const safeLog = (x) => Math.log(Math.max(x, 1e-12));
+const safeLog2 = (x) => Math.log2(Math.max(x, 1e-12));
+const sigmoid = (z) => 1 / (1 + Math.exp(-z));
 
-    document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
-    const contentId = 'content-' + id;
-    const contentEl = document.getElementById(contentId) || document.getElementById('content-overview');
-    contentEl.classList.add('active');
+// ================================================================
+// SURPRISE VISUALIZATION
+// ================================================================
+const surpriseCanvas = document.getElementById('surpriseCanvas');
+const surpriseCtx = surpriseCanvas.getContext('2d');
 
-    document.querySelectorAll('.lab-group').forEach(el => el.classList.remove('active'));
-    const labId = 'lab-' + id;
-    const labEl = document.getElementById(labId) || document.getElementById('lab-overview');
-    labEl.classList.add('active');
-  }
-
-  function toggleQuiz(el) {
-    el.classList.toggle('open');
-  }
-
-  /* --- MATH LOGIC --- */
-  const safeLog = (x) => Math.log(Math.max(x, 1e-12));
-  const sigmoid = (z) => {
-      if (z >= 0) return 1 / (1 + Math.exp(-z));
-      else return Math.exp(z) / (1 + Math.exp(z));
-  };
-
-  /* 1. ENTROPY LOGIC (UPDATED) */
-  const inpEntN = document.getElementById('input-ent-n');
-  let isFair = true;
-
-  function updateEntropy() {
-    const N = parseInt(inpEntN.value);
-    document.getElementById('disp-ent-n').innerText = "N = " + N;
+function drawSurprise() {
+    const W = surpriseCanvas.width, H = surpriseCanvas.height;
+    const pad = { left: 50, right: 20, top: 20, bottom: 40 };
     
-    let H = 0;
-    let desc = "";
-
-    if(isFair) {
-      // Uniform: p = 1/N
-      H = Math.log2(N);
-      desc = "P = uniform";
-    } else {
-      // Unfair: Skewed distribution (simulated)
-      // Assume one side has 90% probability, others split 10%
-      const pMax = 0.9;
-      const pRest = 0.1 / (N - 1);
-      
-      // H = - [ pMax*log(pMax) + (N-1)*pRest*log(pRest) ]
-      H = - ( pMax * Math.log2(pMax) + (N-1) * pRest * Math.log2(pRest) );
-      desc = "P = [0.9, ...]";
+    surpriseCtx.fillStyle = '#fff';
+    surpriseCtx.fillRect(0, 0, W, H);
+    
+    // Draw axes
+    surpriseCtx.strokeStyle = '#e5e4e2';
+    surpriseCtx.lineWidth = 1;
+    surpriseCtx.beginPath();
+    surpriseCtx.moveTo(pad.left, pad.top);
+    surpriseCtx.lineTo(pad.left, H - pad.bottom);
+    surpriseCtx.lineTo(W - pad.right, H - pad.bottom);
+    surpriseCtx.stroke();
+    
+    // Draw curve: I(x) = -log2(p)
+    surpriseCtx.strokeStyle = '#c45d4a';
+    surpriseCtx.lineWidth = 2.5;
+    surpriseCtx.beginPath();
+    for (let i = 0; i <= 100; i++) {
+        const p = 0.01 + (i / 100) * 0.98;
+        const surprise = -safeLog2(p);
+        const x = pad.left + (i / 100) * (W - pad.left - pad.right);
+        const y = H - pad.bottom - (surprise / 7) * (H - pad.top - pad.bottom);
+        if (i === 0) surpriseCtx.moveTo(x, y);
+        else surpriseCtx.lineTo(x, y);
     }
-
-    document.getElementById('res-ent-val').innerText = H.toFixed(3);
-    document.getElementById('row-prob-dist').innerHTML = `<span style="font-size:11px; opacity:0.6">${desc}</span>`;
-  }
-
-  function setFairness(fair) {
-    isFair = fair;
-    document.getElementById('btn-fair').classList.toggle('active', fair);
-    document.getElementById('btn-unfair').classList.toggle('active', !fair);
-    updateEntropy();
-  }
-
-  if(inpEntN) inpEntN.addEventListener('input', updateEntropy);
-
-
-  /* 2. CROSS ENTROPY */
-  const inpCeP = document.getElementById('input-ce-p');
-  if(inpCeP) inpCeP.addEventListener('input', (e) => {
-    const p = parseInt(e.target.value) / 100;
-    document.getElementById('disp-ce-p').innerText = p.toFixed(2);
-    document.getElementById('res-ce-loss').innerText = (-Math.log(p)).toFixed(3);
-  });
-
-  /* 3. BCE */
-  let bceY = 1;
-  const inpBceZ = document.getElementById('input-bce-z');
-  
-  function updateBCE() {
-    const z = parseInt(inpBceZ.value) / 100;
-    const p = sigmoid(z);
+    surpriseCtx.stroke();
     
-    document.getElementById('disp-bce-z').innerText = z.toFixed(2);
-    document.getElementById('res-bce-p').innerText = p.toFixed(4); 
+    // Current point
+    const pVal = parseInt(document.getElementById('surpriseSlider').value) / 100;
+    const sVal = -safeLog2(pVal);
+    const px = pad.left + pVal * (W - pad.left - pad.right);
+    const py = H - pad.bottom - (sVal / 7) * (H - pad.top - pad.bottom);
     
-    let loss;
-    if (bceY === 1) loss = -Math.log(p);
-    else loss = -Math.log(1 - p);
+    surpriseCtx.fillStyle = '#c45d4a';
+    surpriseCtx.beginPath();
+    surpriseCtx.arc(px, py, 6, 0, Math.PI * 2);
+    surpriseCtx.fill();
     
-    document.getElementById('res-bce-loss').innerText = loss.toFixed(4);
-  }
+    // Labels
+    surpriseCtx.fillStyle = '#6b7280';
+    surpriseCtx.font = '12px Inter, sans-serif';
+    surpriseCtx.textAlign = 'center';
+    surpriseCtx.fillText('P(x)', W / 2, H - 8);
+    
+    surpriseCtx.save();
+    surpriseCtx.translate(15, H / 2);
+    surpriseCtx.rotate(-Math.PI / 2);
+    surpriseCtx.fillText('Surprise (bits)', 0, 0);
+    surpriseCtx.restore();
+    
+    // Update displays
+    document.getElementById('surpriseP').textContent = pVal.toFixed(2);
+    document.getElementById('surpriseValue').textContent = sVal.toFixed(2) + ' bits';
+}
 
-  function setBceY(val) {
+document.getElementById('surpriseSlider').addEventListener('input', drawSurprise);
+
+// ================================================================
+// ENTROPY VISUALIZATION
+// ================================================================
+let entropyDistribution = 'fair';
+
+function updateEntropyBars() {
+    const N = parseInt(document.getElementById('entropyN').value);
+    const container = document.getElementById('entropyBars');
+    container.innerHTML = '';
+    
+    let probs = [];
+    if (entropyDistribution === 'fair') {
+        probs = Array(N).fill(1 / N);
+    } else {
+        // Loaded: 70% on first, rest split
+        probs = [0.7];
+        for (let i = 1; i < N; i++) probs.push(0.3 / (N - 1));
+    }
+    
+    // Calculate entropy
+    let H = 0;
+    for (const p of probs) {
+        if (p > 0) H += p * (-safeLog2(p));
+    }
+    const maxH = Math.log2(N);
+    
+    // Draw bars
+    const maxBarHeight = 100;
+    for (let i = 0; i < N; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        bar.style.height = (probs[i] * maxBarHeight * N * 0.8) + 'px';
+        bar.style.opacity = 0.6 + probs[i] * 2;
+        
+        const label = document.createElement('span');
+        label.className = 'bar-label';
+        label.textContent = (i + 1);
+        bar.appendChild(label);
+        
+        const value = document.createElement('span');
+        value.className = 'bar-value';
+        value.textContent = probs[i].toFixed(2);
+        bar.appendChild(value);
+        
+        container.appendChild(bar);
+    }
+    
+    document.getElementById('entropyValue').textContent = H.toFixed(2) + ' bits';
+    document.getElementById('entropyMax').textContent = maxH.toFixed(2) + ' bits';
+}
+
+function setDistribution(type) {
+    entropyDistribution = type;
+    document.getElementById('btnFair').classList.toggle('active', type === 'fair');
+    document.getElementById('btnLoaded').classList.toggle('active', type === 'loaded');
+    updateEntropyBars();
+}
+
+document.getElementById('entropyN').addEventListener('change', updateEntropyBars);
+
+// ================================================================
+// CROSS-ENTROPY VISUALIZATION
+// ================================================================
+const ceCanvas = document.getElementById('ceCanvas');
+const ceCtx = ceCanvas.getContext('2d');
+
+function drawCE() {
+    const W = ceCanvas.width, H = ceCanvas.height;
+    const pad = { left: 50, right: 20, top: 20, bottom: 40 };
+    
+    ceCtx.fillStyle = '#fff';
+    ceCtx.fillRect(0, 0, W, H);
+    
+    // Draw axes
+    ceCtx.strokeStyle = '#e5e4e2';
+    ceCtx.lineWidth = 1;
+    ceCtx.beginPath();
+    ceCtx.moveTo(pad.left, pad.top);
+    ceCtx.lineTo(pad.left, H - pad.bottom);
+    ceCtx.lineTo(W - pad.right, H - pad.bottom);
+    ceCtx.stroke();
+    
+    // Draw curve: -log(q)
+    ceCtx.strokeStyle = '#c45d4a';
+    ceCtx.lineWidth = 2.5;
+    ceCtx.beginPath();
+    for (let i = 0; i <= 100; i++) {
+        const q = 0.01 + (i / 100) * 0.98;
+        const loss = -safeLog(q);
+        const x = pad.left + (i / 100) * (W - pad.left - pad.right);
+        const y = H - pad.bottom - (loss / 5) * (H - pad.top - pad.bottom);
+        if (i === 0) ceCtx.moveTo(x, y);
+        else ceCtx.lineTo(x, y);
+    }
+    ceCtx.stroke();
+    
+    // Current point
+    const qVal = parseInt(document.getElementById('ceSlider').value) / 100;
+    const lossVal = -safeLog(qVal);
+    const px = pad.left + qVal * (W - pad.left - pad.right);
+    const py = H - pad.bottom - (lossVal / 5) * (H - pad.top - pad.bottom);
+    
+    ceCtx.fillStyle = '#c45d4a';
+    ceCtx.beginPath();
+    ceCtx.arc(px, py, 6, 0, Math.PI * 2);
+    ceCtx.fill();
+    
+    // Labels
+    ceCtx.fillStyle = '#6b7280';
+    ceCtx.font = '12px Inter, sans-serif';
+    ceCtx.textAlign = 'center';
+    ceCtx.fillText('Q(correct class)', W / 2, H - 8);
+    
+    ceCtx.save();
+    ceCtx.translate(15, H / 2);
+    ceCtx.rotate(-Math.PI / 2);
+    ceCtx.fillText('Loss', 0, 0);
+    ceCtx.restore();
+    
+    document.getElementById('ceP').textContent = qVal.toFixed(2);
+    document.getElementById('ceValue').textContent = lossVal.toFixed(2);
+}
+
+document.getElementById('ceSlider').addEventListener('input', drawCE);
+
+// ================================================================
+// KL DIVERGENCE VISUALIZATION
+// ================================================================
+const klCanvas = document.getElementById('klCanvas');
+const klCtx = klCanvas.getContext('2d');
+
+function drawKL() {
+    const W = klCanvas.width, H = klCanvas.height;
+    const pad = { left: 50, right: 20, top: 20, bottom: 40 };
+    
+    klCtx.fillStyle = '#fff';
+    klCtx.fillRect(0, 0, W, H);
+    
+    const pVal = parseInt(document.getElementById('klPSlider').value) / 100;
+    const qVal = parseInt(document.getElementById('klQSlider').value) / 100;
+    
+    // Draw bars for P and Q
+    const barWidth = 80;
+    const gap = 40;
+    const centerX = W / 2;
+    
+    // P distribution bars
+    const p0 = 1 - pVal, p1 = pVal;
+    const q0 = 1 - qVal, q1 = qVal;
+    const maxHeight = H - pad.top - pad.bottom - 30;
+    
+    // P bars (left)
+    klCtx.fillStyle = '#4a90e2';
+    klCtx.fillRect(centerX - gap - barWidth, H - pad.bottom - p0 * maxHeight, barWidth / 2 - 2, p0 * maxHeight);
+    klCtx.fillRect(centerX - gap - barWidth / 2 + 2, H - pad.bottom - p1 * maxHeight, barWidth / 2 - 2, p1 * maxHeight);
+    
+    // Q bars (right)
+    klCtx.fillStyle = '#c45d4a';
+    klCtx.fillRect(centerX + gap, H - pad.bottom - q0 * maxHeight, barWidth / 2 - 2, q0 * maxHeight);
+    klCtx.fillRect(centerX + gap + barWidth / 2 + 2, H - pad.bottom - q1 * maxHeight, barWidth / 2 - 2, q1 * maxHeight);
+    
+    // Labels
+    klCtx.fillStyle = '#37352f';
+    klCtx.font = '13px Inter, sans-serif';
+    klCtx.textAlign = 'center';
+    klCtx.fillText('P (true)', centerX - gap - barWidth / 2, H - 8);
+    klCtx.fillText('Q (model)', centerX + gap + barWidth / 2, H - 8);
+    
+    klCtx.fillStyle = '#6b7280';
+    klCtx.font = '11px JetBrains Mono, monospace';
+    klCtx.fillText('0', centerX - gap - barWidth + barWidth / 4, H - pad.bottom + 15);
+    klCtx.fillText('1', centerX - gap - barWidth / 4, H - pad.bottom + 15);
+    klCtx.fillText('0', centerX + gap + barWidth / 4, H - pad.bottom + 15);
+    klCtx.fillText('1', centerX + gap + barWidth * 3 / 4, H - pad.bottom + 15);
+    
+    // Calculate values
+    const H_P = -(p0 * safeLog(p0) + p1 * safeLog(p1));
+    const H_PQ = -(p0 * safeLog(q0) + p1 * safeLog(q1));
+    const KL = H_PQ - H_P;
+    
+    document.getElementById('klPValue').textContent = pVal.toFixed(2);
+    document.getElementById('klQValue').textContent = qVal.toFixed(2);
+    document.getElementById('klEntropy').textContent = H_P.toFixed(2);
+    document.getElementById('klCE').textContent = H_PQ.toFixed(2);
+    document.getElementById('klValue').textContent = KL.toFixed(2);
+}
+
+document.getElementById('klPSlider').addEventListener('input', drawKL);
+document.getElementById('klQSlider').addEventListener('input', drawKL);
+
+// ================================================================
+// BCE VISUALIZATION
+// ================================================================
+const bceCanvas = document.getElementById('bceCanvas');
+const bceCtx = bceCanvas.getContext('2d');
+let bceY = 1;
+
+function drawBCE() {
+    const W = bceCanvas.width, H = bceCanvas.height;
+    const pad = { left: 50, right: 20, top: 20, bottom: 40 };
+    
+    bceCtx.fillStyle = '#fff';
+    bceCtx.fillRect(0, 0, W, H);
+    
+    // Draw axes
+    bceCtx.strokeStyle = '#e5e4e2';
+    bceCtx.lineWidth = 1;
+    bceCtx.beginPath();
+    bceCtx.moveTo(pad.left, pad.top);
+    bceCtx.lineTo(pad.left, H - pad.bottom);
+    bceCtx.lineTo(W - pad.right, H - pad.bottom);
+    bceCtx.stroke();
+    
+    // Draw sigmoid curve (faint)
+    bceCtx.strokeStyle = '#4a90e2';
+    bceCtx.lineWidth = 1.5;
+    bceCtx.setLineDash([4, 4]);
+    bceCtx.beginPath();
+    for (let i = 0; i <= 100; i++) {
+        const z = -4 + (i / 100) * 8;
+        const s = sigmoid(z);
+        const x = pad.left + (i / 100) * (W - pad.left - pad.right);
+        const y = H - pad.bottom - s * (H - pad.top - pad.bottom) * 0.8;
+        if (i === 0) bceCtx.moveTo(x, y);
+        else bceCtx.lineTo(x, y);
+    }
+    bceCtx.stroke();
+    bceCtx.setLineDash([]);
+    
+    // Draw loss curve
+    bceCtx.strokeStyle = '#c45d4a';
+    bceCtx.lineWidth = 2.5;
+    bceCtx.beginPath();
+    for (let i = 0; i <= 100; i++) {
+        const z = -4 + (i / 100) * 8;
+        const p = sigmoid(z);
+        const loss = bceY === 1 ? -safeLog(p) : -safeLog(1 - p);
+        const x = pad.left + (i / 100) * (W - pad.left - pad.right);
+        const y = H - pad.bottom - (loss / 5) * (H - pad.top - pad.bottom);
+        if (i === 0) bceCtx.moveTo(x, y);
+        else bceCtx.lineTo(x, y);
+    }
+    bceCtx.stroke();
+    
+    // Current point
+    const zVal = parseInt(document.getElementById('bceZSlider').value) / 100;
+    const pVal = sigmoid(zVal);
+    const lossVal = bceY === 1 ? -safeLog(pVal) : -safeLog(1 - pVal);
+    
+    const px = pad.left + ((zVal + 4) / 8) * (W - pad.left - pad.right);
+    const py = H - pad.bottom - (lossVal / 5) * (H - pad.top - pad.bottom);
+    
+    bceCtx.fillStyle = '#c45d4a';
+    bceCtx.beginPath();
+    bceCtx.arc(px, py, 6, 0, Math.PI * 2);
+    bceCtx.fill();
+    
+    // Labels
+    bceCtx.fillStyle = '#6b7280';
+    bceCtx.font = '12px Inter, sans-serif';
+    bceCtx.textAlign = 'center';
+    bceCtx.fillText('Logit z', W / 2, H - 8);
+    
+    document.getElementById('bceZ').textContent = zVal.toFixed(2);
+    document.getElementById('bceSigmoid').textContent = pVal.toFixed(3);
+    document.getElementById('bceLoss').textContent = lossVal.toFixed(3);
+}
+
+function setBceY(val) {
     bceY = val;
-    document.getElementById('btn-y-0').classList.toggle('active', val === 0);
-    document.getElementById('btn-y-1').classList.toggle('active', val === 1);
-    updateBCE();
-  }
-  if(inpBceZ) inpBceZ.addEventListener('input', updateBCE);
+    document.getElementById('bceY0').classList.toggle('active', val === 0);
+    document.getElementById('bceY1').classList.toggle('active', val === 1);
+    drawBCE();
+}
 
-  /* 4. KL DIVERGENCE */
-  const inpKlP = document.getElementById('input-kl-p');
-  const inpKlQ = document.getElementById('input-kl-q');
+document.getElementById('bceZSlider').addEventListener('input', drawBCE);
 
-  function updateKL() {
-    const p = parseInt(inpKlP.value) / 100;
-    const q = parseInt(inpKlQ.value) / 100;
-    
-    document.getElementById('disp-kl-p').innerText = p.toFixed(2);
-    document.getElementById('disp-kl-q').innerText = q.toFixed(2);
-
-    const p0 = 1 - p;
-    const q0 = 1 - q;
-
-    const h_p = -(p * safeLog(p) + p0 * safeLog(p0));
-    const ce_pq = -(p * safeLog(q) + p0 * safeLog(q0));
-    const kl = ce_pq - h_p;
-
-    document.getElementById('res-kl-h').innerText = h_p.toFixed(3);
-    document.getElementById('res-kl-ce').innerText = ce_pq.toFixed(3);
-    document.getElementById('res-kl-val').innerText = kl.toFixed(3);
-  }
-  if(inpKlP) { inpKlP.addEventListener('input', updateKL); inpKlQ.addEventListener('input', updateKL); }
-
-  /* 5. COMBO */
-  const inpComboP = document.getElementById('input-combo-p');
-  if(inpComboP) inpComboP.addEventListener('input', (e) => {
-    const p = parseInt(e.target.value) / 100;
-    document.getElementById('disp-combo-p').innerText = p.toFixed(2);
-    const valP = Math.max(p, 1e-12);
-    document.getElementById('res-combo-ce').innerText = (-Math.log(valP)).toFixed(3);
-    document.getElementById('res-combo-bce1').innerText = (-Math.log(valP)).toFixed(3);
-  });
-
-  // Init
-  updateEntropy();
-  updateBCE();
-  updateKL();
-
+// Initialize all
+drawSurprise();
+updateEntropyBars();
+drawCE();
+drawKL();
+drawBCE();
 </script>
 </body>
 </html>
